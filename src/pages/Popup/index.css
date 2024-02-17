@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #ccc;
+  width: 400px;
+  height: 600px;
+  display: flex;
+  flex-direction: column;
+}
+#popup {
+  background-color: #03041a;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}

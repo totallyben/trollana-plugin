@@ -1,0 +1,48 @@
+import axios from 'axios';
+
+export const Api = {
+  api() {
+    const api = axios.create({
+      baseURL: 'https://api.app.trollana.io/v1',
+    });
+
+    api.interceptors.response.use(
+      (response) => Promise.resolve(response),
+      (error) => {
+        // network error
+        if (!error.response || !error.response.status) {
+          console.log('API network error');
+          return Promise.reject(error);
+        }
+
+        let errors = ['an error occurred'];
+        if (error.response) {
+          switch (error.response.status) {
+            case 400:
+            case 401:
+              errors = error.response.data.errors;
+              break;
+
+            case 403:
+              errors = error.response.data.errors;
+              break;
+
+            case 500:
+              break;
+
+            default:
+              break;
+          }
+
+          if (errors) {
+            console.log(errors);
+          }
+        }
+
+        return Promise.reject(error);
+      }
+    );
+
+    return api;
+  },
+};
