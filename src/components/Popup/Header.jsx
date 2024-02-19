@@ -2,7 +2,7 @@ import React from 'react';
 
 export function Header() {
   return (
-    <header className="h-12 border-b-2 border-indigo-500 flex items-center justify-center w-full">
+    <header className="xx-h-12 xx-border-b-2 xx-border-indigo-500 xx-flex xx-items-center xx-justify-center xx-w-full">
       <img 
         src="logo.png"
         width={120}

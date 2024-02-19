@@ -13,19 +13,14 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": ["https://twitter.com/*", "https://app.trollana.vip/*"],
       "js": ["content.js"]
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": [
-        "Satoshi-Medium.woff2",
-        "yalla.woff2",
-        "sticker.gif",
-        "logo.png"
-      ],
-      "matches": ["<all_urls>"]
+      "resources": ["icon-128.png", "sticker.gif", "logo.png"],
+      "matches": ["https://twitter.com/*", "https://app.trollana.vip/*"]
     }
   ],
   "icons": {

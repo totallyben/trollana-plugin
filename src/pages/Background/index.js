@@ -18,42 +18,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return generateReply(request, sendResponse);
   }
 
-  if (request.action === 'recordReply') {
-    return recordReply(request, sendResponse);
+  if (request.action === 'confirmReply') {
+    return confirmReply(request, sendResponse);
   }
 });
 
-async function recordReply(request, sendResponse) {
-  // record reply
-  // console.log('recordReply background', tweetId);
-  // console.log('bg walletAddress', walletAddress);
-  // fetch('https://api.app.trollana.io/v1/twitter', {
-  //   method: 'POST',
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //   },
-  //   body: JSON.stringify({ tweet: tweetText }),
-  // })
-  //   .then((response) => response.json())
-  //   .then((data) => {
-  //     // Send the API response back to the content script
-  //     sendResponse({ reply: data.reply });
-  //   })
-  //   .catch((error) => console.error('Error:', error));
-  // // Keep the messaging channel open for the asynchronous response
-  // return true;
-}
-
 function generateReply(request, sendResponse) {
-  const url = new URL(request.url);
-
-  // Split the pathname by '/' and take the last part
-  const pathSegments = url.pathname.split('/');
-  const tweetId = pathSegments[pathSegments.length - 1];
-
   const params = {
     tweet: request.tweetText,
-    tweetId: tweetId,
+    tweetId: request.tweetId,
     replyAuthor: request.username,
     walletAddress: request.walletAddress,
   };
@@ -63,7 +36,11 @@ function generateReply(request, sendResponse) {
     .post('/troll/twitter', params)
     .then((response) => {
       console.error('generate reply response', response);
-      sendResponse({ response: response });
+      if (response && response.error) {
+        sendResponse({ response: response });
+        return;
+      }
+      sendResponse({ reply: response.reply });
     })
     .catch((error) => {
       console.error('error', error);
@@ -91,5 +68,31 @@ function generateReply(request, sendResponse) {
   //   });
 
   // Keep the messaging channel open for the asynchronous response
+  return true;
+}
+
+async function confirmReply(request, sendResponse) {
+  const params = {
+    tweetId: request.tweetId,
+    replyId: request.replyId,
+    walletAddress: request.walletAddress,
+  };
+  console.log(params);
+
+  Api.api()
+    .post('/troll/twitter/confirm', params)
+    .then((response) => {
+      console.error('confirm reply response', response);
+      if (response && response.error) {
+        sendResponse({ response: response });
+        return;
+      }
+      sendResponse({ confirmed: response.confirmed });
+    })
+    .catch((error) => {
+      console.error('error', error);
+      sendResponse({ error: error });
+    });
+
   return true;
 }

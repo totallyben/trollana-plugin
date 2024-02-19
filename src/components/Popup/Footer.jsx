@@ -14,11 +14,11 @@ const footerLinks = [
 
 export function Footer() {
   return (
-    <footer className="h-12 border-t-2 border-indigo-500 flex items-center justify-center text-slate-200">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <footer className="xx-h-12 xx-border-t-2 xx-border-indigo-500 xx-flex xx-items-center xx-justify-center xx-text-slate-200">
+      <div className="xx-mx-auto xx-max-w-7xl xx-px-4 xx-sm:px-6 vlg:px-8">
         {footerLinks.map((item) => (
           <a key={item.name} href={item.link} target="_blank" rel="noreferrer">
-            <FontAwesomeIcon icon={item.icon} className="mr-4" />
+            <FontAwesomeIcon icon={item.icon} className="xx-mr-4" />
           </a>
         ))}
       </div>

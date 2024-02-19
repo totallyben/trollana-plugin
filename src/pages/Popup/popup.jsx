@@ -33,26 +33,26 @@ const Popup = () => {
   };
 
   return (
-    <main className="flex-1 overflow-auto p-4 flex items-center justify-center text-slate-200">
-      <div className="text-center">
-        <div className="mb-10 text-2xl">
+    <main className="xx-flex-1 xx-overflow-auto xx-p-4 xx-flex xx-items-center xx-justify-center xx-text-slate-200">
+      <div className="xx-text-center">
+        <div className="xx-mb-10 xx-text-2xl">
           Let's go trolling
         </div>
-        <div className="mb-2">
+        <div className="xx-mb-2">
           Wallet address
         </div>
-        <div className="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-600 sm:max-w-md">
+        <div className="xx-flex xx-rounded-md xx-shadow-sm xx-ring-1 xx-ring-inset xx-ring-gray-300 xx-focus-within:ring-2 xx-focus-within:ring-inset xx-focus-within:ring-indigo-600 xx-sm:max-w-md">
             <input
               type="text"
               value={walletAddress}
               onChange={(e) => setWalletAddress(e.target.value)}
-              className="block flex-1 border-0 p-1.5 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+              className="xx-block xx-flex-1 border-0 xx-p-1.5 xx-text-gray-900 xx-placeholder:text-gray-400 xx-focus:ring-0 xx-sm:text-sm xx-sm:leading-6"
               placeholder="Wallet address"
             />
         </div>
         <button
           type="button"
-          className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          className="xx-rounded-md xx-bg-indigo-600 xx-px-3 xx-py-2 xx-text-sm xx-font-semibold xx-text-white xx-shadow-sm xx-hover:bg-indigo-500 xx-focus-visible:outline xx-focus-visible:outline-2 xx-focus-visible:outline-offset-2 xx-focus-visible:outline-indigo-600"
           onClick={saveWalletAddress}
         >
           Save
