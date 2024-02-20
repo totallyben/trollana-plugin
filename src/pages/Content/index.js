@@ -37,12 +37,14 @@ import { getKeyFromLocalStorage } from '../../utils';
 const TrollHelper = {
   url: '',
   tweetId: '',
+  tweetText: '',
   modalOpen: false,
   modalButtonAdded: false,
   inlineButtonAdded: false,
   replyContent: '',
   replyContentSet: false,
   replyPostConfirmed: false,
+  lastRepliedToTweetId: '',
 
   thinkingTexts: [
     'Just a moment',
@@ -54,6 +56,16 @@ const TrollHelper = {
     'Polishing a gem of a response',
     'Stitching together something spectacular.',
     'Cooking',
+  ],
+
+  replyHeaders: [
+    'Voilà',
+    'And here it is',
+    'All yours',
+    'Something special for you',
+    'Here you go',
+    'Tailored for you',
+    'Your exclusive:',
   ],
 
   init() {
@@ -77,6 +89,7 @@ const TrollHelper = {
 
     // modal was closed but is now open
     if (modalTweetButton && !TrollHelper.modalButtonAdded) {
+      TrollHelper.setTweetId();
       TrollHelper.addModalButton();
       TrollHelper.modalOpen = true;
       TrollHelper.modalButtonAdded = true;
@@ -84,8 +97,13 @@ const TrollHelper = {
 
     // modal was open but is now closed
     if (!modalTweetButton && TrollHelper.modalOpen) {
+      TrollHelper.setTweetId();
       TrollHelper.modalOpen = false;
       TrollHelper.modalButtonAdded = false;
+    }
+
+    if (TrollHelper.tweetText === '') {
+      TrollHelper.setTweetId();
     }
 
     // inline toolbar is available
@@ -156,86 +174,19 @@ const TrollHelper = {
     trollButton.addEventListener('click', TrollHelper.trollButtonClickHandler);
   },
 
-  // /**
-  //  * Add troll button to the UI
-  //  *
-  //  * @returns void
-  //  */
-  // addButtonInline() {
-  //   if (
-  //     TrollHelper.inlineButtonAdded ||
-  //     !TrollHelper.url.includes('/status/')
-  //   ) {
-  //     return;
-  //   }
-
-  //   const toolBar = document.querySelector('main div[data-testid="toolBar"]');
-  //   if (!toolBar) {
-  //     setTimeout(() => {
-  //       console.log('add troll button settimeout');
-  //       TrollHelper.addButton();
-  //     }, 1000);
-
-  //     return;
-  //   }
-
-  //   const contentWrapper = document.createElement('div');
-  //   contentWrapper.className = 'relative';
-  //   contentWrapper.innerHTML =
-  //     `
-  //     <button id="troll-button"
-  //         class="rounded-full bg-purple-600 px-4 py-2.5 text-sm
-  //     font-semibold text-white shadow-sm hover:bg-purple-500
-  //     focus-visible:outline focus-visible:outline-2
-  //     focus-visible:outline-offset-2 focus-visible:outline-purple-600">Troll</button>
-  //     <div class="troll-message-box flex flex-row
-  //         invisible absolute top-full mt-4 -left-20
-  //         bg-white/75 text-slate-700 p-4 shadow-xl rounded w-80
-  //         ring-offset-2 ring-2 ring-purple-600 ring-offset-transparent">
-  //         <div class="message-content grow"></div>
-  //         <div class="pl-3">
-  //             <img src="` +
-  //     chrome.runtime.getURL('sticker.gif') +
-  //     `" width="64" height="64" />
-  //         </div>
-  //     </div>
-  //     `;
-
-  //   let replyButton = document.querySelector('div[data-testid="tweetButton"]');
-
-  //   if (!replyButton) {
-  //     TrollHelper.modalOpen = false;
-  //     replyButton = document.querySelector(
-  //       'div[data-testid="tweetButtonInline"]'
-  //     );
-  //   }
-
-  //   replyButton.parentNode.insertBefore(contentWrapper, replyButton);
-
-  //   const trollButton = document.getElementById('troll-button');
-
-  //   trollButton.addEventListener('click', TrollHelper.trollButtonClickHandler);
-
-  //   TrollHelper.inlineButtonAdded = true;
-  //   console.log('button added');
-  // },
-
   /**
    * Handle the Troll button click
    *
    * @returns void
    */
   async trollButtonClickHandler() {
-    console.log('getTweetText');
-    var tweetTextDiv = document.querySelector('div[data-testid="tweetText"]');
+    const tweetTextDiv = document.querySelector('div[data-testid="tweetText"]');
     if (!tweetTextDiv) {
-      console.log('could not identify tweet content');
+      this.displayErrors('Ccould not identify tweet content', true);
       return;
     }
 
-    const tweetText = TrollHelper.extractTweetContentWithEmojis(tweetTextDiv);
-
-    TrollHelper.generateReply(tweetText);
+    TrollHelper.generateReply();
     // TrollHelper.generateReplyTest();
     // TrollHelper.testWatchForReplyAddedToUI();
   },
@@ -245,30 +196,39 @@ const TrollHelper = {
    *
    * Once generated will trigger watchForPaste()
    *
-   * @param {string} tweetText
    * @returns void
    */
-  async generateReply(tweetText) {
-    TrollHelper.setThinkingPlaceholder();
+  async generateReply() {
+    TrollHelper.clearNotifications();
+    TrollHelper.displayThinking();
+
     chrome.runtime.sendMessage(
       {
         action: 'generateReply',
         tweetId: TrollHelper.tweetId,
-        tweetText: tweetText,
+        tweetText: TrollHelper.tweetText,
         username: TrollHelper.getUsername(),
         walletAddress: await getKeyFromLocalStorage('walletAddress'),
       },
       function (response) {
+        TrollHelper.hideThinking();
+
         // console.log('receive response', response);
         if (response && response.error) {
-          console.log('errors from the API', response.error);
+          let error = response.error;
+          if (error !== '' && error.length === 0) {
+            error = 'An unknown error occurred';
+          }
+          TrollHelper.displayErrors(error, true);
+          console.log('error generating a reply', response);
           return;
         }
 
         TrollHelper.writeToClipboard(response.reply);
         TrollHelper.replyContentSet = true;
         TrollHelper.replyContent = response.reply;
-        TrollHelper.setPasteInstructionsPlaceholder();
+        TrollHelper.displayReply(response.reply);
+        // TrollHelper.setPasteInstructionsPlaceholder();
         TrollHelper.watchForPaste();
       }
     );
@@ -328,97 +288,112 @@ const TrollHelper = {
    * @returns void
    */
   submitReply() {
-    const button = document.querySelector(
-      'div[data-testid="tweetButtonInline"]'
-    );
+    let buttonSelector = 'div[data-testid="tweetButtonInline"]';
+    if (TrollHelper.modalOpen) {
+      buttonSelector = 'div[data-testid="tweetButton"]';
+    }
+    const button = document.querySelector(buttonSelector);
     if (!button) {
       return;
     }
+
+    // clone the original tweet id
+    const tweetId = TrollHelper.tweetId.toString();
 
     const event = new MouseEvent('click', {
       bubbles: true, // Event will bubble up through the DOM
       cancelable: true, // Event can be canceled
     });
     button.dispatchEvent(event);
-    TrollHelper.watchForReplyAddedToUI();
+
+    // if (TrollHelper.modalOpen) {
+    //   TrollHelper.watchForAlertAddedToUI();
+    //   return;
+    // }
+    TrollHelper.watchForAlertAddedToUI(tweetId);
   },
 
   /**
-   * Check the UI for the reply to appear
+   * Check the UI for the alert with reply tweet link in
    *
    * If appears will trigger validation call with the API
    *
-   * @return void
+   * @param {String} tweetId
+   *
+   * @returns void
    */
-  watchForReplyAddedToUI() {
+  watchForAlertAddedToUI(tweetId) {
     if (TrollHelper.replyPostConfirmed) {
       return;
     }
 
-    const latestReply = TrollHelper.getLatestReply();
-    if (!latestReply) {
+    const alertDiv = document.querySelector('div[role="alert"]');
+    if (!alertDiv) {
       setTimeout(() => {
-        console.log('watchForReplyAddedToUI settimeout');
-        TrollHelper.watchForReplyAddedToUI();
+        console.log('watchForAlertAddedToUI settimeout');
+        TrollHelper.watchForAlertAddedToUI(tweetId);
       }, 500);
       return;
     }
 
-    const latestReplyTextDiv = latestReply.querySelector(
-      'div[data-testid="tweetText"]'
-    );
-    if (!latestReplyTextDiv) {
+    const link = alertDiv.querySelector('a[role="link"]');
+    if (!link) {
       setTimeout(() => {
-        console.log('watchForReplyAddedToUI settimeout');
-        TrollHelper.watchForReplyAddedToUI();
+        console.log('watchForAlertAddedToUI settimeout');
+        TrollHelper.watchForAlertAddedToUI(tweetId);
       }, 500);
       return;
     }
 
-    const latestReplyText =
-      TrollHelper.extractTweetContentWithEmojis(latestReplyTextDiv);
+    const url = link.getAttribute('href');
+    const pathSegments = url.split('/');
+    const replyId = pathSegments[pathSegments.length - 1];
 
-    console.log('checking latest reply');
-    console.log('reply text');
-    console.log('"' + latestReplyText + '"');
-    console.log('generated reply');
-    console.log('"' + TrollHelper.replyContent + '"');
+    console.log('found alert with reply link');
+    console.log('tweetId', tweetId);
+    console.log('reply tweetId', replyId);
 
-    const matchFound = latestReplyText === TrollHelper.replyContent;
-
-    if (!matchFound) {
-      setTimeout(() => {
-        console.log('watchForReplyAddedToUI settimeout');
-        TrollHelper.watchForReplyAddedToUI();
-      }, 500);
-      return;
-    }
-
-    TrollHelper.confirmReply(latestReply);
+    TrollHelper.confirmReply(tweetId, replyId);
   },
 
   /**
    * Tell API to confirm replt
    *
-   * @param {Element} messageBox
+   * @param {String} tweetId
+   * @param {String} replyId
+   *
+   * @returns void
    */
-  async confirmReply(latestReply) {
-    console.log('reply id', this.getReplyId(latestReply));
-    TrollHelper.setConfirmingMessage();
+  async confirmReply(tweetId, replyId) {
+    TrollHelper.clearNotifications();
+    console.log('confirming reply id', replyId);
+    TrollHelper.showLoader('Confirming your tweet');
 
     chrome.runtime.sendMessage(
       {
         action: 'confirmReply',
-        tweetId: TrollHelper.tweetId,
-        replyId: this.getReplyId(latestReply),
+        tweetId: tweetId,
+        replyId: replyId,
         walletAddress: await getKeyFromLocalStorage('walletAddress'),
       },
       function (response) {
+        TrollHelper.hideLoader();
+
         // console.log('receive response', response);
         if (response && response.error) {
-          console.log('errors from the API', response.error);
+          let error = response.error;
+          if (error !== '' || error.length === 0) {
+            error = 'An unknown error occurred';
+          }
+          TrollHelper.displayErrors(error, true);
+          console.log('error confirming reply', response);
           return;
         }
+
+        TrollHelper.displayNotification(
+          'Woo hoo!! Well done, one in the bank for the Troll Army!!',
+          true
+        );
 
         TrollHelper.replyPostConfirmed = true;
         TrollHelper.reset();
@@ -511,40 +486,233 @@ const TrollHelper = {
   },
 
   /**
-   * Write to message area
+   * Write to notification area
    *
    * @param {String} message
+   * @param {Boolean} clearErrors
+   *
+   * @returns void
    */
-  writeMessage(message) {
-    const notificationWrapper = document.getElementById('troll-notifications');
-    const notificationDiv = notificationWrapper.querySelector(
-      '.notification-content'
-    );
+  displayNotification(message, clearErrors) {
+    const notificationArea = document.getElementById('troll-notifications');
+    const notificationSelector = '.notification-content';
 
-    notificationWrapper.classList.replace('xx-invisible', 'xx-visible');
+    notificationArea.classList.replace('xx-hidden', 'xx-block');
+
+    if (clearErrors) {
+      TrollHelper.displayErrors('');
+    }
+
+    TrollHelper.hideLoader();
+
+    if (message === '') {
+      TrollHelper.hideNotificationComponent(notificationSelector);
+    } else {
+      TrollHelper.displayNotificationComponent(notificationSelector);
+    }
+
+    const notificationDiv =
+      notificationArea.querySelector(notificationSelector);
     notificationDiv.textContent = message;
   },
 
   /**
-   * Set thinking message
-   *
-   * @param {Element} messageBox
+   * Clear all notifications
    */
-  setThinkingPlaceholder(messageBox) {
+  clearNotifications() {
+    TrollHelper.displayNotification('', true);
+    TrollHelper.displayReply('');
+  },
+
+  /**
+   * Display an error
+   *
+   * @param {String} error
+   * @param {Boolean} clearNotitication
+   *
+   * @returns void
+   */
+  displayErrors(message, clearNotification) {
+    const notificationArea = document.getElementById('troll-notifications');
+    const errorsSelector = '.error-messages';
+
+    if (clearNotification) {
+      TrollHelper.displayNotification('');
+    }
+
+    TrollHelper.hideLoader();
+
+    notificationArea.classList.replace('xx-hidden', 'xx-block');
+
+    message = TrollHelper.capitalizeFirstLetter(message);
+
+    if (message === '') {
+      TrollHelper.hideNotificationComponent(errorsSelector);
+    } else {
+      TrollHelper.displayNotificationComponent(errorsSelector);
+    }
+
+    message = `
+      <svg xmlns="http://www.w3.org/2000/svg" class="xx-h-5 xx-inline-block xx-fill-current" viewBox="0 0 512 512"><!--!Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z"/></svg>
+      ${message}
+    `;
+
+    const errorsDiv = notificationArea.querySelector(errorsSelector);
+    errorsDiv.innerHTML = message;
+  },
+
+  /**
+   * Show loader
+   *
+   * @param {String} headerText
+   *
+   * @returns void
+   */
+  showLoader(headerText) {
+    TrollHelper.showLoaderHeader(headerText);
+    TrollHelper.displayNotificationComponent('.loader-wrapper');
+  },
+
+  /**
+   * Hide loader
+   *
+   * @returns void
+   */
+  hideLoader() {
+    TrollHelper.hideLoaderHeader();
+    TrollHelper.hideNotificationComponent('.loader-wrapper');
+  },
+
+  /**
+   * Show loader header
+   *
+   * @param {String} headerText
+   *
+   * @returns void
+   */
+  showLoaderHeader(headerText) {
+    const notificationArea = document.getElementById('troll-notifications');
+    const selector = '.loader-header';
+    const header = notificationArea.querySelector(selector);
+    header.textContent = headerText;
+
+    TrollHelper.displayNotificationComponent(selector);
+  },
+
+  /**
+   * Hide loader header
+   *
+   * @returns void
+   */
+  hideLoaderHeader() {
+    const notificationArea = document.getElementById('troll-notifications');
+    const selector = '.loader-header';
+    const header = notificationArea.querySelector(selector);
+    header.textContent = '';
+
+    TrollHelper.hideNotificationComponent(selector);
+  },
+
+  /**
+   * Display thinking message
+   *
+   * @returns void
+   */
+  displayThinking() {
     const randomIndex = Math.floor(
       Math.random() * TrollHelper.thinkingTexts.length
     );
 
-    TrollHelper.writeMessage(TrollHelper.thinkingTexts[randomIndex]);
+    TrollHelper.showLoader(TrollHelper.thinkingTexts[randomIndex]);
   },
 
   /**
-   * Set confirming message
+   * Hide loader header
    *
    * @returns void
    */
-  setConfirmingMessage() {
-    TrollHelper.writeMessage('Confirming your tweet');
+  hideThinking() {
+    TrollHelper.hideLoader();
+  },
+
+  /**
+   * Display reply
+   *
+   * @param {String} reply
+   *
+   * @returns void
+   */
+  displayReply(reply) {
+    const notificationArea = document.getElementById('troll-notifications');
+    const wrapperSelector = '.reply-wrapper';
+
+    if (reply === '') {
+      TrollHelper.hideNotificationComponent(wrapperSelector);
+      return;
+    }
+
+    // set reply header
+    const randomIndex = Math.floor(
+      Math.random() * TrollHelper.replyHeaders.length
+    );
+    const replyHeader = notificationArea.querySelector('.reply-header');
+    replyHeader.textContent = TrollHelper.replyHeaders[randomIndex] + ':';
+
+    // set reply
+    const replyDiv = notificationArea.querySelector('.reply-content');
+    replyDiv.textContent = reply;
+
+    TrollHelper.displayNotificationComponent(wrapperSelector);
+  },
+
+  /**
+   * Display instructions
+   *
+   * @returns void
+   */
+  displayInstructions() {
+    TrollHelper.displayNotificationComponent('.instructions');
+  },
+
+  /**
+   * Hide instructions
+   *
+   * @returns void
+   */
+  hideInstructions() {
+    TrollHelper.hideNotificationComponent('.instructions');
+  },
+
+  /**
+   * Display notification component
+   *
+   * @param {String} selector
+   *
+   * @returns void
+   */
+  displayNotificationComponent(selector) {
+    const notificationArea = document.getElementById('troll-notifications');
+    const component = notificationArea.querySelector(selector);
+    if (!component) {
+      return;
+    }
+    component.classList.replace('xx-hidden', 'xx-block');
+  },
+
+  /**
+   * Hide notification component
+   *
+   * @param {String} selector
+   *
+   * @returns void
+   */
+  hideNotificationComponent(selector) {
+    const notificationArea = document.getElementById('troll-notifications');
+    const component = notificationArea.querySelector(selector);
+    if (!component) {
+      return;
+    }
+    component.classList.replace('xx-block', 'xx-hidden');
   },
 
   /**
@@ -558,9 +726,90 @@ const TrollHelper = {
     );
     placeholder.textContent = 'Paste your troll here!!';
 
-    TrollHelper.writeMessage(
+    TrollHelper.displayNotification(
       'Reply added to clipboard, paste it and click Reply to earn $TROLLANA!!'
     );
+  },
+
+  /**
+   * Set tweet ID of tweet being replied to
+   *
+   * @returns void
+   */
+  setTweetId() {
+    let tweetId = '';
+
+    const tweetText = TrollHelper.getTweetText();
+
+    if (window.location.href.includes('/compose/post')) {
+      // find matching tweet from page
+      const pageTweets = document.querySelectorAll(
+        'main div[data-testid="tweetText"]'
+      );
+      pageTweets.forEach((div) => {
+        if (tweetId !== '') {
+          return;
+        }
+
+        const testTweet = TrollHelper.extractTweetContentWithEmojis(div);
+        if (testTweet === tweetText) {
+          // console.log('found matching tweet');
+          tweetId = TrollHelper.getTweetIdFromConversationListArticle(
+            div.closest('article')
+          );
+        }
+      });
+    } else {
+      const url = new URL(window.location.href);
+      const pathSegments = url.pathname.split('/');
+      tweetId = pathSegments[pathSegments.length - 1];
+    }
+
+    if (tweetId === '1') {
+      return;
+    }
+    TrollHelper.tweetId = tweetId;
+    TrollHelper.tweetText = tweetText;
+    // console.log('tweetId', tweetId);
+    // console.log('tweetText', tweetText);
+  },
+
+  /**
+   * Get tweet ID for conversation list tweet
+   *
+   * @param {Element} article
+   *
+   * @return string
+   */
+  getTweetIdFromConversationListArticle(article) {
+    const links = article.querySelectorAll('a[role="link"]');
+    let tweetId = '';
+    links.forEach((link) => {
+      const url = link.getAttribute('href');
+      if (tweetId !== '' || !url.includes('/status')) {
+        return;
+      }
+
+      const pathSegments = url.split('/');
+      tweetId = pathSegments[pathSegments.length - 1];
+    });
+
+    return tweetId;
+  },
+
+  /**
+   * Get text of text being replied to or quoted
+   *
+   * @retuns String
+   */
+  getTweetText() {
+    const tweetTextDiv = document.querySelector('div[data-testid="tweetText"]');
+
+    if (!tweetTextDiv) {
+      return '';
+    }
+
+    return TrollHelper.extractTweetContentWithEmojis(tweetTextDiv);
   },
 
   /**
@@ -592,7 +841,24 @@ const TrollHelper = {
       }
     });
 
+    // remove media
+    const regex = / https:\/\/pic\.twitter\.com\/.*$/;
+    content = content.replace(regex, '');
+
     return content;
+  },
+
+  /**
+   * Capitalise the first letter in a string
+   * @param {String} str
+   *
+   * @returns
+   */
+  capitalizeFirstLetter(str) {
+    if (!str) {
+      return str;
+    }
+    return str.charAt(0).toUpperCase() + str.slice(1);
   },
 
   /**
@@ -642,11 +908,6 @@ const TrollHelper = {
    * @return void
    */
   reset() {
-    const url = new URL(window.location.href);
-    const pathSegments = url.pathname.split('/');
-    const tweetId = pathSegments[pathSegments.length - 1];
-
-    TrollHelper.tweetId = tweetId;
     TrollHelper.modalOpen = false;
     TrollHelper.modalButtonAdded = false;
     TrollHelper.inlineButtonAdded = false;
@@ -654,6 +915,7 @@ const TrollHelper = {
     TrollHelper.replyContentSet = false;
     TrollHelper.replyPostConfirmed = false;
 
+    TrollHelper.setTweetId();
     TrollHelper.addNotificationArea();
   },
 
@@ -663,6 +925,11 @@ const TrollHelper = {
    * @return void
    */
   addNotificationArea() {
+    const areaExits = document.getElementById('troll-notifications');
+    if (areaExits) {
+      return;
+    }
+
     const notificationArea = document.createElement('div');
     notificationArea.id = 'troll-notifications';
     notificationArea.className =
@@ -679,8 +946,8 @@ const TrollHelper = {
       chrome.runtime.getURL('icon-128.png') +
       `" width="32" height="32" />
             </div>
-            <div class="xx-ml-3 xx-w-0 xx-flex-1 xx-pt-0.5 xx-text-sm xx-text-gray-900">
-              <p class="xx-font-medium xx-text-gray-900">
+            <div class="xx-ml-3 xx-w-0 xx-flex-1 xx-pt-0.5 xx-text-sm xx-text-slate-900">
+              <p class="xx-font-bold xx-text-indigo-500">
                 Trollana Troll Helper....let's got trolling!
               </p>
               <p class="instructions xx-mt-3">
@@ -689,11 +956,22 @@ const TrollHelper = {
                 and our "Troll" button will appear.
                 Click it and watch the magic happen...
               </p>
-              <p class="instructions xx-mt-3">
+              <p class="instructions xx-hidden xx-mt-3">
                 Post the generated reply to earn $TROLLANA!
               </p>
-              <p class="notification-content xx-mt-3 xx-text xx-text-gray-500">
-              </p>
+              <p class="error-messages xx-hidden xx-mt-3 xx-text-red-500 xx-font-bold"></p>
+              <p class="notification-content xx-text-center xx-mt-3 xx-text-lg xx-text-indigo-800 xx-font-bold"></p>
+              <div class="reply-wrapper xx-hidden xx-mt-3">
+                <div class="reply-header xx-text-lg xx-text-indigo-800 xx-font-bold"></div>
+                <div class="reply-content xx-mt-2 xx-italic xx-p-4 xx-text-indigo-800 xx-bg-slate-300 xx-rounded-lg xx-border-indigo-800 xx-border-2 xx-border-dotted"></div>
+                <div class="reply-instructions xx-mt-2 xx-text-sm">
+                  Your reply has already been added to your clipboard, paste it in click Reply to earn $TROLLANA!!
+                </div>
+              </div>
+              <div class="loader-header xx-hidden xx-text-center xx-mt-3 xx-text-lg xx-text-indigo-800 xx-font-bold"></div>
+              <div class="loader-wrapper xx-hidden xx-text-center xx-my-3">
+                <div class="troll-loader xx-inline-block"></div>
+              </div>
               <div class="xx-mt-3 xx-flex xx-space-x-7">
                 <button type="button" class="xx-hidden rounded-md bg-white text-sm font-medium text-indigo-600 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Undo</button>
                 <button type="button" class="xx-hidden rounded-md bg-white text-sm font-medium text-gray-700 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Dismiss</button>
