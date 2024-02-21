@@ -1,6 +1,5 @@
 import { setupSentry } from '../../sentry.js';
 
-import { getKeyFromLocalStorage } from '../../utils';
 import Api from '../../api';
 
 chrome.commands.onCommand.addListener((command) => {

@@ -72,8 +72,8 @@ const TrollHelper = {
     if (!window.location.href.includes('twitter.com')) {
       return;
     }
+
     TrollHelper.checkPageLoad();
-    TrollHelper.monitorUIState();
   },
 
   /**
@@ -391,7 +391,7 @@ const TrollHelper = {
         }
 
         TrollHelper.displayNotification(
-          'Woo hoo!! Well done, one in the bank for the Troll Army!!',
+          "Woo hoo!! Well done, one in the bank for the Troll Army!!<br />Let's go again!",
           true
         );
 
@@ -513,7 +513,7 @@ const TrollHelper = {
 
     const notificationDiv =
       notificationArea.querySelector(notificationSelector);
-    notificationDiv.textContent = message;
+    notificationDiv.innerHTML = message;
   },
 
   /**
@@ -692,11 +692,12 @@ const TrollHelper = {
    */
   displayNotificationComponent(selector) {
     const notificationArea = document.getElementById('troll-notifications');
-    const component = notificationArea.querySelector(selector);
-    if (!component) {
-      return;
-    }
-    component.classList.replace('xx-hidden', 'xx-block');
+    const components = notificationArea.querySelectorAll(selector);
+
+    components.forEach((component) => {
+      component.classList.replace('xx-hidden', 'xx-block');
+      console.log('show', selector);
+    });
   },
 
   /**
@@ -708,11 +709,15 @@ const TrollHelper = {
    */
   hideNotificationComponent(selector) {
     const notificationArea = document.getElementById('troll-notifications');
-    const component = notificationArea.querySelector(selector);
-    if (!component) {
-      return;
-    }
-    component.classList.replace('xx-block', 'xx-hidden');
+    const components = notificationArea.querySelectorAll(selector);
+
+    components.forEach((component) => {
+      if (!component) {
+        return;
+      }
+      console.log('hide', selector);
+      component.classList.replace('xx-block', 'xx-hidden');
+    });
   },
 
   /**
@@ -950,7 +955,7 @@ const TrollHelper = {
               <p class="xx-font-bold xx-text-indigo-500">
                 Trollana Troll Helper....let's got trolling!
               </p>
-              <p class="instructions xx-mt-3">
+              <p class="instructions xx-block xx-mt-3">
                 Click "Post your reply" or
                 <svg viewBox="0 0 24 24" class="xx-h-5 xx-inline-block xx-fill-current"><g><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></g></svg>
                 and our "Troll" button will appear.
@@ -965,7 +970,7 @@ const TrollHelper = {
                 <div class="reply-header xx-text-lg xx-text-indigo-800 xx-font-bold"></div>
                 <div class="reply-content xx-mt-2 xx-italic xx-p-4 xx-text-indigo-800 xx-bg-slate-300 xx-rounded-lg xx-border-indigo-800 xx-border-2 xx-border-dotted"></div>
                 <div class="reply-instructions xx-mt-2 xx-text-sm">
-                  Your reply has already been added to your clipboard, paste it in click Reply to earn $TROLLANA!!
+                  Your reply has already been added to your clipboard, paste it in and click Reply to earn $TROLLANA!!
                 </div>
               </div>
               <div class="loader-header xx-hidden xx-text-center xx-mt-3 xx-text-lg xx-text-indigo-800 xx-font-bold"></div>
@@ -992,6 +997,16 @@ const TrollHelper = {
     `;
 
     document.body.appendChild(notificationArea);
+
+    (async () => {
+      const walletAddress = await getKeyFromLocalStorage('walletAddress');
+      if (!walletAddress) {
+        TrollHelper.displayErrors(
+          'Wallet address not set.  Please open the plugin and follow the instructions.  Once set come back here and reload the page.'
+        );
+        TrollHelper.hideInstructions();
+      }
+    })();
   },
 };
 
