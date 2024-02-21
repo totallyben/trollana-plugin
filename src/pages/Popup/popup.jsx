@@ -1,145 +1,79 @@
 import React, { useEffect, useState } from 'react';
-
+import { useDispatch } from 'react-redux';
 import { setWallet } from '../../redux/Wallet/actions';
-
 import { getKeyFromLocalStorage } from '../../utils';
 import Api from '../../api';
-
-const { useDispatch } = require('react-redux');
+import { WalletConnected, WalletNotConnected} from '../../components/Popup';
 
 const Popup = () => {
   const [walletAddress, setWalletAddress] = useState('');
-  const [apiError, setApiError] = useState(null); // State for tracking API errors
-  const [isEditing, setIsEditing] = useState(false); // State to track editing mode
+  const [apiError, setApiError] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const dispatch = useDispatch();
 
   useEffect(() => {
     const fetchWallet = async () => {
       const walletAddr = await getKeyFromLocalStorage('walletAddress');
-      console.log(walletAddr);
       setWalletAddress(walletAddr);
       dispatch(setWallet(walletAddr));
-      // If wallet address is fetched successfully, set isEditing to false
-      setIsEditing(!walletAddr);
+      setIsEditing(!walletAddr); // Set isEditing based on the presence of a wallet address
     };
 
     fetchWallet();
   }, []);
 
-  const saveWalletAddress = async () => {
-    console.log('saveWalletAddress local');
+  const saveWalletAddress = async (address) => {
+    setWalletAddress(address); // Update local state with the new address
 
-    if (walletAddress === '') {
-      chrome.storage.local.set({
-        walletAddress: walletAddress,
-      }, () => {
-        dispatch(setWallet(walletAddress));
-        // Only set isEditing to false after successful save
+    if (address === '') {
+      chrome.storage.local.set({ walletAddress: address }, () => {
+        dispatch(setWallet(address));
         setIsEditing(false);
       });
       return;
     }
 
-    Api.api()
-    .post('/wallet/validate', { walletAddress: walletAddress })
-    .then((response) => {
+    try {
+      const response = await Api.api().post('/wallet/validate', { walletAddress: address });
       if (response && response.error) {
-        console.error('error', response.error);
-        setApiError(response.error); // Update state with API error
-        return;
+        setApiError(response.error);
+      } else {
+        setApiError(null);
+        chrome.storage.local.set({ walletAddress: address }, () => {
+          dispatch(setWallet(address));
+          setIsEditing(false);
+        });
       }
-      // Reset API error if the request is successful
-      setApiError(null);
-
-      chrome.storage.local.set({
-        walletAddress: walletAddress,
-      }, () => {
-        dispatch(setWallet(walletAddress));
-        // Only set isEditing to false after successful save
-        setIsEditing(false);
-      });
-    })
-    .catch((error) => {
-      console.error('error', error);
-      setApiError(error); // Update state with API error
-    });
-  };
-
-  const handleEditClick = () => {
-    setIsEditing(true);
-  };
-
-  const formatWalletAddress = (address) => {
-    if (address.length > 8) {
-      return `${address.slice(0, 4)}...${address.slice(-4)}`;
+    } catch (error) {
+      setApiError(error.toString());
     }
-    return address; // Return the full address if it's too short to format
   };
+
+  const handleEditClick = () => setIsEditing(true);
 
   return (
     <main className="xx-flex-1 xx-overflow-auto xx-p-4 xx-flex xx-items-center xx-justify-center xx-text-slate-200">
       <div className="xx-text-center">
         <div className="xx-mb-8 xx-text-xl">
           Trollana's AI Reply Plugin
-          <div className="xx-text-sm xx-mt-3">
-            Inject wit into your tweets with troll-like comebacks.
-            I'm your digital jest-maker, turning ordinary exchanges into 
-            moments of laughter and lightening up the Twitter atmosphere.
-          </div>
-          <div className="xx-text-sm xx-mt-3">
-            And get paid while having fun!!
-          </div>
-          {!walletAddress && (
-            <div className="xx-text-sm xx-mt-5">
-              Head to <a href="https://app.trollana.vip" target="_blank" rel="noreferrer">https://app.trollana.vip</a> to register
-              and then enter your Wallet Address below.
-            </div>
-          )}
-          {apiError && (
-            <div className="xx-text-red-500 xx-mt-2">
-              Error: {apiError}
-            </div>
-          )}
         </div>
-        {walletAddress && !isEditing && (
-          <div className="xx-rounded-lg xx-border-slate-200 xx-border-2 xx-border-dotted xx-p-4">
-            <div className="xx-mb-2 xx-text-lg">Wallet address</div>
-            <div className="xx-text-slate-200 xx-text-lg xx-mb-4">{formatWalletAddress(walletAddress)}</div>
-            <button
-              type="button"
-              className="xx-rounded-md xx-bg-indigo-600 xx-px-3 xx-py-2 xx-text-sm xx-font-semibold xx-text-white xx-shadow-sm xx-hover:bg-indigo-500 xx-focus-visible:outline xx-focus-visible:outline-2 xx-focus-visible:outline-offset-2 xx-focus-visible:outline-indigo-600"
-              onClick={handleEditClick}
-            >
-              Edit
-            </button>
-          </div>
-        )}
-        {(isEditing || !walletAddress) && (
-          <div className="xx-rounded-lg xx-border-slate-200 xx-border-2 xx-border-dotted xx-p-4">
-          <div className="xx-mb-2 xx-text-lg">Wallet address</div>
-            <div className="xx-flex xx-rounded-md xx-shadow-sm xx-ring-1 xx-ring-inset xx-ring-gray-300 xx-focus-within:ring-2 xx-focus-within:ring-inset xx-focus-within:ring-indigo-600 xx-sm:max-w-md">
-              <input
-                type="text"
-                value={walletAddress}
-                onChange={(e) => setWalletAddress(e.target.value)}
-                className="xx-block xx-w-3/4 xx-flex-1 border-0 xx-p-1.5 xx-text-gray-900 xx-placeholder:text-gray-400 xx-focus:ring-0 xx-sm:text-sm xx-sm:leading-6"
-                placeholder="Wallet address"
-              />
-            </div>
-            <button
-              type="button"
-              className="xx-rounded-md xx-bg-indigo-600 xx-mt-3 xx-px-3 xx-py-2 xx-text-sm xx-font-semibold xx-text-white xx-shadow-sm xx-hover:bg-indigo-500 xx-focus-visible:outline xx-focus-visible:outline-2 xx-focus-visible:outline-offset-2 xx-focus-visible:outline-indigo-600"
-              onClick={saveWalletAddress}
-            >
-              Save
-            </button>
-          </div>
-        )}
-        {walletAddress && (
-          <div className="xx-mt-5 xx-text-xl">
-            Now head over to <a href="https://twitter.com" target="_blank" rel="noreferrer">X</a> and let's go trolling!!
-          </div>
+        {walletAddress ? (
+          <WalletConnected
+            walletAddress={walletAddress}
+            isEditing={isEditing}
+            apiError={apiError}
+            saveWalletAddress={saveWalletAddress}
+            handleEditClick={handleEditClick}
+          />
+        ) : (
+          <WalletNotConnected
+            walletAddress={walletAddress}
+            isEditing={isEditing}
+            apiError={apiError}
+            saveWalletAddress={saveWalletAddress}
+            handleEditClick={handleEditClick}
+          />
         )}
       </div>
     </main>
