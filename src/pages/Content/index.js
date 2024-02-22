@@ -70,8 +70,9 @@ const TrollHelper = {
 
   init() {
     if (
-      !window.location.href.includes('twitter.com') &&
-      !window.location.href.includes('app.trollana.vip')
+      (!window.location.href.includes('twitter.com') &&
+        !window.location.href.includes('app.trollana.vip')) ||
+      window.location.href === 'https://twitter.com'
     ) {
       return;
     }
@@ -1008,9 +1009,9 @@ const TrollHelper = {
           'Wallet address not set.  Please open the plugin and follow the instructions.  Once set come back here and reload the page.'
         );
         TrollHelper.hideInstructions();
-      } else {
-        TrollHelper.monitorUIState();
+        return;
       }
+      TrollHelper.monitorUIState();
     })();
   },
 };
