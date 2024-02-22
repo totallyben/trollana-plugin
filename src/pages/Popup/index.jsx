@@ -9,9 +9,9 @@ import { Header, Footer } from "../../components/Popup";
 import '../../lang';
 import './index.css';
 
-import { setupSentry } from '../../sentry';
+// import { setupSentry } from '../../sentry';
 
-setupSentry();
+// setupSentry();
 
 const container = document.getElementById('popup');
 const root = createRoot(container);

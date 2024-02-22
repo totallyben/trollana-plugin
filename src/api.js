@@ -1,7 +1,7 @@
 export const Api = {
   api() {
-    // const baseURL = 'https://api.app.trollana.io/v1';
-    const baseURL = 'http://localhost:8080/v1';
+    const baseURL = 'https://api.app.trollana.io/v1';
+    // const baseURL = 'http://localhost:8080/v1';
 
     async function fetchWithTimeout(resource, options = {}, timeout = 8000) {
       console.log('fetchWithTimeout', resource);
