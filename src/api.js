@@ -1,7 +1,7 @@
 export const Api = {
   api() {
-    const baseURL = 'https://api.app.trollana.io/v1';
-    // const baseURL = 'http://localhost:8080/v1';
+    // const baseURL = 'https://api.app.trollana.io/v1';
+    const baseURL = 'http://localhost:8080/v1';
 
     async function fetchWithTimeout(resource, options = {}, timeout = 8000) {
       console.log('fetchWithTimeout', resource);
@@ -16,12 +16,12 @@ export const Api = {
     }
 
     async function request(endpoint, options = {}) {
-      console.log('request', endpoint);
+      // console.log('request', endpoint);
       const response = await fetchWithTimeout(`${baseURL}${endpoint}`, options);
       const data = await response.json();
 
-      console.log('response', response);
-      console.log('data', data);
+      // console.log('response', response);
+      // console.log('data', data);
       if (!response.ok) {
         const error = (data && data.message) || response.status;
         return Promise.reject(error);

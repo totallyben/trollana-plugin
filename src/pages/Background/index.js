@@ -29,12 +29,11 @@ function generateReply(request, sendResponse) {
     replyAuthor: request.username,
     walletAddress: request.walletAddress,
   };
-  console.log(params);
 
   Api.api()
     .post('/troll/twitter', params)
     .then((response) => {
-      console.error('generate reply response', response);
+      // console.error('generate reply response', response);
       if (response && response.error) {
         sendResponse({ response: response });
         return;
