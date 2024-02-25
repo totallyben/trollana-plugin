@@ -70,7 +70,8 @@ const TrollHelper = {
 
   init() {
     if (
-      !window.location.href.includes('twitter.com') ||
+      (!window.location.href.includes('twitter.com') &&
+        !window.location.href.includes('app.trollana.vip')) ||
       window.location.href === 'https://twitter.com'
     ) {
       return;
