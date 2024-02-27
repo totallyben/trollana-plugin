@@ -67,9 +67,9 @@ export function Dashboard(props) {
           </a>{' '}
           and let's go trolling!!
         </div>
-        <div className="xx-rounded-lg xx-text-indigo-600 xx-bg-slate-100 xx-p-2 xx-mt-5 xx-mx-12  xx-cursor-pointer">
+        <div className="xx-rounded-lg xx-text-indigo-800 xx-bg-slate-100 xx-p-2 xx-mt-5 xx-mx-12  xx-cursor-pointer">
           <div
-            className="xx-text-base xx-text-bold"
+            className="xx-text-base xx-font-bold"
             onClick={props.handleEditClick}
           >
             <span className="xx-ml-4">

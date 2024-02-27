@@ -4,15 +4,11 @@ export function Header() {
   return (
     <>
       <header className="xx-h-12 xx-border-b-2 xx-border-indigo-500 xx-flex xx-items-center xx-justify-center xx-w-full">
-        <img 
-          src="logo.png"
-          width={120}
-          alt="Trollan logo"
-        />
+        <img src="logo.png" width={120} alt="Trollan logo" />
       </header>
 
-      <div className="xx-mt-4 xx-text-xl xx-text-slate-200 xx-text-center">
-        Trollana's AI Reply Plugin
+      <div className="xx-mt-4 xx-text-xl xx-text-slate-200 xx-font-bold xx-text-center">
+        Trollana's AI Response Plugin
       </div>
     </>
 
