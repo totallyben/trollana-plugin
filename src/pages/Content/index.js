@@ -77,6 +77,11 @@ const TrollHelper = {
       return;
     }
 
+    if (window.location.href.includes('app.trollana.vip')) {
+      // todo
+      return;
+    }
+
     TrollHelper.checkPageLoad();
   },
 
