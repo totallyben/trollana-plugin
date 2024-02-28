@@ -25,3 +25,5 @@ secrets.*.js
 .env.sentry-build-plugin
 
 .npmrc
+
+build.zip
