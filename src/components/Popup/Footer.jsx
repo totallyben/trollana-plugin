@@ -20,13 +20,17 @@ const footerLinks = [
   // { name: "help", icon: faCircleQuestion, link: "https://trollana.vip" },
 ];
 
-export function Footer() {
+export function Footer(props) {
+  console.log('footer mode', props.mode);
+  console.log('footer isSelectingMode', props.isSelectingMode);
   return (
     <>
-      <div className="xx-mb-4 xx-px-10 xx-flex xx-text-xs xx-text-center xx-text-slate-200 xx-items-center xx-justify-center">
-        We only store your wallet address to enable the transfer of your earned
-        TROLLANA.
-      </div>
+      {!props.isSelectingMode && props.mode === 'trollToEarn' && (
+        <div className="xx-mb-4 xx-px-10 xx-flex xx-text-xs xx-text-center xx-text-slate-200 xx-items-center xx-justify-center">
+          We only store your wallet address to enable the transfer of your
+          earned TROLLANA.
+        </div>
+      )}
       <footer className="xx-h-12 xx-border-t-2 xx-border-indigo-500 xx-flex xx-items-center xx-justify-center xx-text-slate-200">
         <div className="xx-mx-auto xx-max-w-7xl xx-px-4 xx-sm:px-6 vlg:px-8">
           {footerLinks.map((item) => (

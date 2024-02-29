@@ -59,15 +59,15 @@ export function Dashboard(props) {
 
   return (
     <div className="xx-text-center xx-w-3/4">
-      <div className="xx-mb-4 xx-text-xl">
-        <div className="xx-mt-3 xx-text-lg">
+      <div className="xx-text-xl">
+        <div className="xx-text-base">
           You're all set, now head over to{' '}
           <a href="https://twitter.com" target="_blank" rel="noreferrer">
             X
           </a>{' '}
           and let's go trolling!!
         </div>
-        <div className="xx-rounded-lg xx-text-indigo-800 xx-bg-slate-100 xx-p-2 xx-mt-5 xx-mx-12  xx-cursor-pointer">
+        <div className="xx-rounded-lg xx-text-indigo-800 xx-bg-slate-100 xx-p-2 xx-mt-5 xx-mx-10 xx-cursor-pointer">
           <div
             className="xx-text-base xx-font-bold"
             onClick={props.handleEditClick}

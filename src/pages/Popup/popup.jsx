@@ -1,100 +1,69 @@
 import React, { useEffect, useState } from 'react';
 
-import { setWallet } from '../../redux/Wallet/actions';
-import { Dashboard, SetWallet } from '../../components/Popup';
+import { setMode } from '../../redux/Mode/actions';
+import {
+  Header,
+  Footer,
+  ModeSelect,
+  TrollToEarn,
+  AiHelper,
+} from '../../components/Popup';
 
 import { getKeyFromLocalStorage } from '../../utils';
-import Api from '../../api';
 
 const { useDispatch } = require('react-redux');
 
 const Popup = () => {
-  const [walletAddress, setWalletAddress] = useState('');
-  const [apiError, setApiError] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [haveWallet, setHaveWallet] = useState(false);
+  const [mode, setStateMode] = useState(null);
+  const [isSelectingMode, setIsSelectingMode] = useState(true);
+  // const [haveWallet, setHaveWallet] = useState(false);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const fetchWallet = async () => {
-      const walletAddr = await getKeyFromLocalStorage('walletAddress');
-      console.log(walletAddr);
-      setWalletAddress(walletAddr);
-      dispatch(setWallet(walletAddr));
-      setIsEditing(!walletAddr);
-      setHaveWallet(walletAddr);
+    const fetchMode = async () => {
+      const mode = await getKeyFromLocalStorage('mode');
+      console.log(mode);
+      setStateMode(mode);
+      dispatch(setMode(mode));
+      setIsSelectingMode(!mode);
     };
 
-    fetchWallet();
-  }, []);
+    fetchMode();
+  }, [dispatch]);
 
-  const saveWalletAddress = async () => {
-    console.log('saveWalletAddress local');
-
-    if (walletAddress === '') {
-      chrome.storage.local.set(
-        {
-          walletAddress: walletAddress,
-        },
-        () => {
-          setWalletAddress(walletAddress);
-          dispatch(setWallet(walletAddress));
-          // Only set isEditing to false after successful save
-          setIsEditing(false);
-          setHaveWallet(false);
-        }
-      );
-      return;
-    }
-
-    Api.api()
-      .post('/wallet/validate', { walletAddress: walletAddress })
-      .then((response) => {
-        if (response && response.error) {
-          console.error('error', response.error);
-          setApiError(response.error); // Update state with API error
-          return;
-        }
-        setApiError(null);
-
-        chrome.storage.local.set(
-          {
-            walletAddress: walletAddress,
-          },
-          () => {
-            dispatch(setWallet(walletAddress));
-            // Only set isEditing to false after successful save
-            setIsEditing(false);
-            setHaveWallet(true);
-          }
-        );
-      })
-      .catch((error) => {
-        console.error('error', error);
-        setApiError(error); // Update state with API error
-      });
+  const changeMode = () => {
+    setIsSelectingMode(true);
   };
 
-  const handleEditClick = () => {
-    setIsEditing(true);
+  const saveMode = async (newMode) => {
+    chrome.storage.local.set(
+      {
+        mode: newMode,
+      },
+      () => {
+        setStateMode(newMode);
+        dispatch(setMode(newMode));
+        setIsSelectingMode(false);
+      }
+    );
   };
 
   return (
-    <main className="xx-flex-1 xx-overflow-auto xx-p-4 xx-flex xx-items-center xx-justify-center xx-text-slate-200">
-      <Dashboard
-        walletAddress={walletAddress}
-        isEditing={isEditing}
-        handleEditClick={handleEditClick}
+    <>
+      <Header
+        mode={mode}
+        isSelectingMode={isSelectingMode}
+        changeMode={changeMode}
       />
-      <SetWallet
-        walletAddress={walletAddress}
-        isEditing={isEditing}
-        haveWallet={haveWallet}
-        apiError={apiError}
-        saveWalletAddress={saveWalletAddress}
-        setWalletAddress={setWalletAddress}
-      />
-    </main>
+      <main className="xx-flex-1 xx-overflow-auto xx-px-4 xx-py-2 xx-flex xx-items-center xx-justify-center xx-text-slate-200">
+        {isSelectingMode && <ModeSelect mode={mode} saveMode={saveMode} />}
+
+        {!isSelectingMode && mode === 'trollToEarn' && <TrollToEarn />}
+
+        {!isSelectingMode && mode === 'aiHelper' && <AiHelper />}
+      </main>
+      <Footer mode={mode} isSelectingMode={isSelectingMode} />
+    </>
   );
 };
 
