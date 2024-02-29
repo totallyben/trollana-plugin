@@ -55,7 +55,7 @@ const Popup = () => {
         isSelectingMode={isSelectingMode}
         changeMode={changeMode}
       />
-      <main className="xx-flex-1 xx-overflow-auto xx-px-4 xx-py-2 xx-flex xx-items-center xx-justify-center xx-text-slate-200">
+      <main className="xx-flex-1 xx-overflow-auto xx-px-4 xx-flex xx-items-center xx-justify-center xx-text-slate-200">
         {isSelectingMode && <ModeSelect mode={mode} saveMode={saveMode} />}
 
         {!isSelectingMode && mode === 'trollToEarn' && <TrollToEarn />}

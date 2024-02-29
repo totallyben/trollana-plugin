@@ -191,7 +191,7 @@ const TrollHelper = {
   async trollButtonClickHandler() {
     const tweetTextDiv = document.querySelector('div[data-testid="tweetText"]');
     if (!tweetTextDiv) {
-      this.displayErrors('Ccould not identify tweet content', true);
+      this.displayErrors('Could not identify tweet content', true);
       return;
     }
 

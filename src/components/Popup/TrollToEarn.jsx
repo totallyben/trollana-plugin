@@ -18,7 +18,6 @@ export const TrollToEarn = () => {
   useEffect(() => {
     const fetchWallet = async () => {
       const walletAddr = await getKeyFromLocalStorage('walletAddress');
-      console.log(walletAddr);
       setWalletAddress(walletAddr);
       dispatch(setWallet(walletAddr));
       setIsEditing(!walletAddr);
@@ -29,8 +28,6 @@ export const TrollToEarn = () => {
   }, [dispatch]);
 
   const saveWalletAddress = async () => {
-    console.log('saveWalletAddress local');
-
     if (walletAddress === '') {
       chrome.storage.local.set(
         {
