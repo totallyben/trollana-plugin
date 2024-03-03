@@ -8,20 +8,22 @@ import { personas } from '../../pages/personas';
 
 const { useDispatch } = require('react-redux');
 
+const defaultPersonaId = 'thoughtLeader';
+
 export const AiHelper = () => {
   const [personaId, setStatePersonaId] = useState(null);
   const [persona, setStatePersona] = useState({});
   const dispatch = useDispatch();
 
   const getPersonaById = (personas, id) => {
-    let persona = personas.find(persona => persona.id === id);
+    let persona = personas.find((persona) => persona.id === id);
     if (!persona) {
       persona = {
         id: 'custom',
-      }
+      };
     }
     return persona;
-  }
+  };
 
   useEffect(() => {
     const fetchPersona = async () => {
@@ -63,7 +65,7 @@ export const AiHelper = () => {
 
   return (
     <main className="xx-flex-1 xx-overflow-auto xx-p-4 xx-flex xx-items-center xx-justify-center">
-      <PersonaSelect persona={persona} savePersona={savePersona}  />
+      <PersonaSelect persona={persona} savePersona={savePersona} />
     </main>
   );
 };

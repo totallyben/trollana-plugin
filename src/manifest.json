@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "version": "1.1.2",
+  "version": "1.2.0",
 
   "name": "Trollana AI Social Reply Generator",
-  "description": "Turning ordinary exchanges into moments of laughter & lightening up the X atmosphere",
+  "description": "Your ultimate tool for generating witty and engaging comments for your followers on social platforms",
   "background": {
     "service_worker": "background.js"
   },
@@ -29,11 +29,11 @@
     "128": "icon-128.png"
   },
   "commands": {
-    "refresh_extension": {
+    "reload_extension": {
       "suggested_key": {
-        "default": "Alt+R"
+        "default": "Alt+W"
       },
-      "description": "Refresh Extension"
+      "description": "Reload the extension"
     }
   },
   "content_security_policy": {

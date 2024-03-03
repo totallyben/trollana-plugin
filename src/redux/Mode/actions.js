@@ -3,6 +3,5 @@ export const modeActions = {
 };
 
 export function setMode(mode) {
-  console.log('setMode', mode);
   return { type: modeActions.SET_MODE, mode };
 }

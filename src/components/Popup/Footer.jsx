@@ -21,8 +21,6 @@ const footerLinks = [
 ];
 
 export function Footer(props) {
-  console.log('footer mode', props.mode);
-  console.log('footer isSelectingMode', props.isSelectingMode);
   return (
     <>
       {!props.isSelectingMode && props.mode === 'trollToEarn' && (

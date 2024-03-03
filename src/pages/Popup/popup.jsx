@@ -22,7 +22,6 @@ const Popup = () => {
   useEffect(() => {
     const fetchMode = async () => {
       const mode = await getKeyFromLocalStorage('mode');
-      console.log(mode);
       setStateMode(mode);
       dispatch(setMode(mode));
       setIsSelectingMode(!mode);
