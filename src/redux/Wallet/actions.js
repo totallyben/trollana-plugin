@@ -3,6 +3,5 @@ export const walletActions = {
 };
 
 export function setWallet(walletAddress) {
-  console.log('setWallet', walletAddress);
   return { type: walletActions.SET_WALLET_ADDRESS, walletAddress };
 }

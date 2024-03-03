@@ -1,6 +1,10 @@
-export { Header } from './Header';
-export { Footer } from './Footer';
-export { Stats } from './Stats';
+export { AiHelper } from './AiHelper';
 export { Dashboard } from './Dashboard';
+export { Footer } from './Footer';
+export { Header } from './Header';
+export { ModeSelect } from './ModeSelect';
+export { PersonaSelect } from './PersonaSelect';
 export { SetWallet } from './SetWallet';
+export { Stats } from './Stats';
+export { TrollToEarn } from './TrollToEarn';
 export { Unclaimed } from './Unclaimed';

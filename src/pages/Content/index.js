@@ -1,40 +1,16 @@
-import { twind, cssom, observe } from '@twind/core';
 import 'construct-style-sheets-polyfill';
 
 import '../../styles/main.css';
-import config from './twind.config';
 
 import '../../lang';
 
 import { getKeyFromLocalStorage } from '../../utils';
+import { personas } from '../../pages/personas';
 
 // https://twitter.com/benalphamoon/status/1755004956917039450
 
-// const shadow = document.createElement('div');
-// shadow.id = 'shadow';
-// const shadowRoot = shadow.attachShadow({ mode: 'open' });
-
-// // set up twind
-// const sheet = cssom(new CSSStyleSheet());
-// const tw = twind(config, sheet);
-
-// // link sheet target to shadow dom root
-// shadowRoot.adoptedStyleSheets = [sheet.target];
-// observe(tw, shadowRoot);
-
-// // add fonts
-// (async () => {
-//   const yallaURL = await fetch(chrome.runtime.getURL('yalla.woff2'));
-//   const satoshiURL = await fetch(chrome.runtime.getURL('Satoshi-Medium.woff2'));
-
-//   const fontFaceYalla = new FontFace('Yalla', `url(${yallaURL.url})`);
-//   document.fonts.add(fontFaceYalla);
-
-//   const fontFaceSatoshi = new FontFace('Satoshi', `url(${satoshiURL.url})`);
-//   document.fonts.add(fontFaceSatoshi);
-// })();
-
 const TrollHelper = {
+  mode: '',
   url: '',
   tweetId: '',
   tweetText: '',
@@ -65,7 +41,7 @@ const TrollHelper = {
     'Something special for you',
     'Here you go',
     'Tailored for you',
-    'Your exclusive:',
+    'Your exclusive',
   ],
 
   init() {
@@ -159,18 +135,17 @@ const TrollHelper = {
    * @returns void
    */
   addButton(replyButtonId, trollButtonId) {
+    const buttonLabel =
+      TrollHelper.mode === 'trollToEarn' ? 'Troll' : 'AI Reply';
     const contentWrapper = document.createElement('div');
     contentWrapper.className = 'xx-relative';
-    contentWrapper.innerHTML =
-      `
-      <button id="` +
-      trollButtonId +
-      `" 
+    contentWrapper.innerHTML = `
+      <button id="${trollButtonId}" 
       class="xx-rounded-full xx-bg-purple-600 xx-px-4 xx-py-2.5 xx-text-sm 
         xx-font-semibold xx-text-white xx-shadow-sm xx-hover:bg-purple-500 
         xx-focus-visible:outline xx-focus-visible:outline-2 
         xx-focus-visible:outline-offset-2 xx-focus-visible:outline-purple-600">
-        Troll
+        ${buttonLabel}
       </button>
       `;
 
@@ -191,7 +166,7 @@ const TrollHelper = {
   async trollButtonClickHandler() {
     const tweetTextDiv = document.querySelector('div[data-testid="tweetText"]');
     if (!tweetTextDiv) {
-      this.displayErrors('Ccould not identify tweet content', true);
+      this.displayErrors('Could not identify tweet content', true);
       return;
     }
 
@@ -203,17 +178,71 @@ const TrollHelper = {
   /**
    * Generate reply
    *
-   * Once generated will trigger watchForPaste()
-   *
    * @returns void
    */
   async generateReply() {
+    if (TrollHelper.mode === 'trollToEarn') {
+      TrollHelper.generateTrollReply();
+      return;
+    }
+
+    TrollHelper.generateAiHelperReply();
+  },
+
+  /**
+   * Generate AI helper reply
+   *
+   * @returns void
+   */
+  async generateAiHelperReply() {
     TrollHelper.clearNotifications();
     TrollHelper.displayThinking();
 
     chrome.runtime.sendMessage(
       {
-        action: 'generateReply',
+        action: 'generateAiHelperReply',
+        tweetId: TrollHelper.tweetId,
+        tweetText: TrollHelper.tweetText,
+        username: TrollHelper.getUsername(),
+        personaId: await getKeyFromLocalStorage('personaId'),
+        customPersona: await getKeyFromLocalStorage('customPersona'),
+      },
+      function (response) {
+        TrollHelper.hideThinking();
+
+        // console.log('receive response', response);
+        if (response && response.error) {
+          let error = response.error;
+          if (error !== '' && error.length === 0) {
+            error = 'An unknown error occurred';
+          }
+          TrollHelper.displayErrors(error, true);
+          console.log('error generating a reply', response);
+          return;
+        }
+
+        TrollHelper.writeToClipboard(response.reply);
+        TrollHelper.replyContentSet = true;
+        TrollHelper.replyContent = response.reply;
+        TrollHelper.displayReply(response.reply);
+      }
+    );
+  },
+
+  /**
+   * Generate troll reply
+   *
+   * Once generated will trigger watchForPaste()
+   *
+   * @returns void
+   */
+  async generateTrollReply() {
+    TrollHelper.clearNotifications();
+    TrollHelper.displayThinking();
+
+    chrome.runtime.sendMessage(
+      {
+        action: 'generateTrollReply',
         tweetId: TrollHelper.tweetId,
         tweetText: TrollHelper.tweetText,
         username: TrollHelper.getUsername(),
@@ -258,7 +287,7 @@ const TrollHelper = {
       TrollHelper.writeToClipboard(testMessage);
       TrollHelper.replyContentSet = true;
       TrollHelper.replyContent = testMessage;
-      TrollHelper.setPasteInstructionsPlaceholder();
+      // TrollHelper.setPasteInstructionsPlaceholder();
       TrollHelper.watchForPaste();
     }, 3000);
   },
@@ -735,14 +764,18 @@ const TrollHelper = {
    *  @returns void
    */
   setPasteInstructionsPlaceholder() {
-    const placeholder = document.querySelector(
-      'div.public-DraftEditorPlaceholder-inner'
-    );
-    placeholder.textContent = 'Paste your troll here!!';
+    // const placeholder = document.querySelector(
+    //   'div.public-DraftEditorPlaceholder-inner'
+    // );
+    // placeholder.textContent = 'Paste your troll here!!';
 
-    TrollHelper.displayNotification(
-      'Reply added to clipboard, paste it and click Reply to earn $TROLLANA!!'
-    );
+    let instructions = 'Reply added to clipboard';
+    if (TrollHelper.mode === 'trollToEarn') {
+      instructions =
+        'Reply added to clipboard, paste it and click Reply to earn $TROLLANA!!';
+    }
+
+    TrollHelper.displayNotification(instructions);
   },
 
   /**
@@ -944,34 +977,64 @@ const TrollHelper = {
       return;
     }
 
-    const notificationArea = document.createElement('div');
-    notificationArea.id = 'troll-notifications';
-    notificationArea.className =
-      'xx-pointer-events-none xx-fixed xx-top-6 xx-right-6 xx-w-96';
+    (async () => {
+      const mode = await getKeyFromLocalStorage('mode');
+      if (!mode) {
+        TrollHelper.displayErrors(
+          'Plugin not initialised.  Please open the plugin and follow the instructions.  Once complete come back here and reload the page.'
+        );
+        TrollHelper.hideInstructions();
+        return;
+      }
+      TrollHelper.mode = mode;
 
-    notificationArea.innerHTML =
-      `
+      let personaText = 'Troll to Earn';
+
+      if (mode === 'aiHelper') {
+        const personaId = await getKeyFromLocalStorage('personaId');
+        if (personaId === 'custom') {
+          personaText = 'Custom';
+        } else {
+          const persona = personas.find((persona) => persona.id === personaId);
+          personaText = persona.name;
+        }
+      }
+
+      let pasteInstructions = `Your reply has been added to your clipboard, just paste it in and click Reply`;
+      let buttonLabel = 'AI Reply';
+      if (TrollHelper.mode === 'trollToEarn') {
+        pasteInstructions = `Your reply has been added to your clipboard, just paste it in to earn $TROLLANA!!`;
+        buttonLabel = 'Troll';
+      }
+
+      const notificationArea = document.createElement('div');
+      notificationArea.id = 'troll-notifications';
+      notificationArea.className =
+        'xx-pointer-events-none xx-fixed xx-top-6 xx-right-6 xx-w-96';
+
+      notificationArea.innerHTML =
+        `
     <div class="xx-flex xx-w-full xx-flex-col xx-items-center xx-space-y-4 xx-sm:items-end">
       <div class="xx-pointer-events-auto xx-border-b-4 xx-border-indigo-500 xx-bg-slate-100 xx-w-full xx-max-w-sm xx-overflow-hidden xx-rounded-lg xx-ring-1 xx-ring-black xx-ring-opacity-5">
         <div class="xx-p-4">
           <div class="xx-flex xx-items-start">
             <div class="xx-flex-shrink-0">
               <img src="` +
-      chrome.runtime.getURL('icon-128.png') +
-      `" width="32" height="32" />
+        chrome.runtime.getURL('icon-128.png') +
+        `" width="32" height="32" />
             </div>
             <div class="xx-ml-3 xx-w-0 xx-flex-1 xx-pt-0.5 xx-text-sm xx-text-slate-900">
               <p class="xx-font-bold xx-text-indigo-500">
-                Trollana Troll Helper....let's got trolling!
+                Trollana AI Reply Helper
+              </p>
+              <p class="persona xx-mt-3">
+                <span class="xx-font-semibold">Your persona:</span> ${personaText}
               </p>
               <p class="instructions xx-block xx-mt-3">
                 Click "Post your reply" or
                 <svg viewBox="0 0 24 24" class="xx-h-5 xx-inline-block xx-fill-current"><g><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path></g></svg>
-                and our "Troll" button will appear.
+                and our "${buttonLabel}" button will appear.
                 Click it and watch the magic happen...
-              </p>
-              <p class="instructions xx-hidden xx-mt-3">
-                Post the generated reply to earn $TROLLANA!
               </p>
               <p class="error-messages xx-hidden xx-mt-3 xx-text-red-500 xx-font-bold"></p>
               <p class="notification-content xx-text-center xx-mt-3 xx-text-lg xx-text-indigo-800 xx-font-bold"></p>
@@ -979,7 +1042,7 @@ const TrollHelper = {
                 <div class="reply-header xx-text-lg xx-text-indigo-800 xx-font-bold"></div>
                 <div class="reply-content xx-mt-2 xx-italic xx-p-4 xx-text-indigo-800 xx-bg-slate-300 xx-rounded-lg xx-border-indigo-800 xx-border-2 xx-border-dotted"></div>
                 <div class="reply-instructions xx-mt-2 xx-text-sm">
-                  Your reply has already been added to your clipboard, paste it in and click Reply to earn $TROLLANA!!
+                  ${pasteInstructions}
                 </div>
               </div>
               <div class="loader-header xx-hidden xx-text-center xx-mt-3 xx-text-lg xx-text-indigo-800 xx-font-bold"></div>
@@ -1005,17 +1068,19 @@ const TrollHelper = {
     </div>
     `;
 
-    document.body.appendChild(notificationArea);
+      document.body.appendChild(notificationArea);
 
-    (async () => {
-      const walletAddress = await getKeyFromLocalStorage('walletAddress');
-      if (!walletAddress) {
-        TrollHelper.displayErrors(
-          'Wallet address not set.  Please open the plugin and follow the instructions.  Once set come back here and reload the page.'
-        );
-        TrollHelper.hideInstructions();
-        return;
+      if (mode === 'trollToEarn') {
+        const walletAddress = await getKeyFromLocalStorage('walletAddress');
+        if (!walletAddress) {
+          TrollHelper.displayErrors(
+            'Wallet address not set.  Please open the plugin and follow the instructions.  Once set come back here and reload the page.'
+          );
+          TrollHelper.hideInstructions();
+          return;
+        }
       }
+
       TrollHelper.monitorUIState();
     })();
   },

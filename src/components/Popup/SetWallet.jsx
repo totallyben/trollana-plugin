@@ -1,9 +1,13 @@
 import React from 'react';
 
 export function SetWallet(props) {
+  if (!props.isEditing && props.haveWallet) {
+    return;
+  }
+
   return (
     <div className="xx-text-center">
-      <div className="xx-mb-4 xx-text-xl">
+      <div className="xx-mb-4">
         {!props.haveWallet && (
           <>
             <div className="xx-text-sm">
