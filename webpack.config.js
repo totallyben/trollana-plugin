@@ -41,6 +41,7 @@ var options = {
   mode: process.env.NODE_ENV || 'development',
   devtool: 'source-map',
   entry: {
+    options: path.join(__dirname, 'src', 'pages', 'Options', 'index.jsx'),
     popup: path.join(__dirname, 'src', 'pages', 'Popup', 'index.jsx'),
     background: path.join(__dirname, 'src', 'pages', 'Background', 'index.js'),
     // content: path.join(__dirname, 'src', 'pages', 'Content', 'index.jsx'),
@@ -153,6 +154,12 @@ var options = {
       template: path.join(__dirname, 'src', 'pages', 'Popup', 'index.html'),
       filename: 'popup.html',
       chunks: ['popup'],
+      cache: false,
+    }),
+    new HtmlWebpackPlugin({
+      template: path.join(__dirname, 'src', 'pages', 'Options', 'index.html'),
+      filename: 'options.html',
+      chunks: ['options'],
       cache: false,
     }),
     new HtmlWebpackPlugin({
