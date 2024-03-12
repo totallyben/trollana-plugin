@@ -33,6 +33,8 @@ function generateTrollReply(request, sendResponse) {
     tweetId: request.tweetId,
     replyAuthor: request.username,
     walletAddress: request.walletAddress,
+    shill: request.shillModeEnabled,
+    increasedXCharacterLimit: request.increasedXCharacterLimitEnabled,
   };
 
   Api.api()

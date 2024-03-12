@@ -21,6 +21,8 @@ const TrollHelper = {
   replyContentSet: false,
   replyPostConfirmed: false,
   lastRepliedToTweetId: '',
+  shillModeEnabled: false,
+  increasedXCharacterLimitEnabled: false,
 
   thinkingTexts: [
     'Just a moment',
@@ -247,6 +249,9 @@ const TrollHelper = {
         tweetText: TrollHelper.tweetText,
         username: TrollHelper.getUsername(),
         walletAddress: await getKeyFromLocalStorage('walletAddress'),
+        shillModeEnabled: TrollHelper.shillModeEnabled,
+        increasedXCharacterLimitEnabled:
+          TrollHelper.increasedXCharacterLimitEnabled,
       },
       function (response) {
         TrollHelper.hideThinking();
@@ -990,6 +995,22 @@ const TrollHelper = {
 
       let personaText = 'Troll to Earn';
 
+      if (mode === 'trollToEarn') {
+        const shillModeEnabled = await getKeyFromLocalStorage(
+          'shillModeEnabled'
+        );
+        if (shillModeEnabled !== undefined) {
+          TrollHelper.shillModeEnabled = shillModeEnabled;
+        }
+        const increasedXCharacterLimitEnabled = await getKeyFromLocalStorage(
+          'increasedXCharacterLimitEnabled'
+        );
+        if (increasedXCharacterLimitEnabled !== undefined) {
+          TrollHelper.increasedXCharacterLimitEnabled =
+            increasedXCharacterLimitEnabled;
+        }
+      }
+
       if (mode === 'aiHelper') {
         const personaId = await getKeyFromLocalStorage('personaId');
         if (personaId === 'custom') {
@@ -1003,7 +1024,6 @@ const TrollHelper = {
       let pasteInstructions = `Your reply has been added to your clipboard, just paste it in and click Reply`;
       let buttonLabel = 'AI Reply';
       if (TrollHelper.mode === 'trollToEarn') {
-        pasteInstructions = `Your reply has been added to your clipboard, just paste it in to earn $TROLLANA!!`;
         buttonLabel = 'Troll';
       }
 
